@@ -10,3 +10,5 @@ application/app/config/applications directory to immediately make them available
 We recommend you [download the zipball](https://github.com/mapbender/extra-example-apps/archive/master.zip). There
 is currently no mechanism and no plan to add these files via composer or otherwise embed them into Mapbender Starter
 directly.
+
+Some / many applications may only work internally on the Wheregroup network.
