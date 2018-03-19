@@ -1,0 +1,588 @@
+parameters:
+    applications:
+        wesseling:
+            title: Wesseling Digitizer Test
+            description: Digitalisierung Testumgebung
+            screenshot: ../mapbender_user_basic/mapbender_user_basic.png
+            published: true
+            initializeOnStart: true
+            template:  Mapbender\CoreBundle\Template\Fullscreen
+            regionProperties:
+                - name: sidepane
+                  properties: {"name": "accordion", "label": "mb.manager.template.region.accordion.label"}
+            layersets:
+                main:
+                    osm:
+                        class: Mapbender\WmsBundle\Entity\WmsInstance
+                        title: OSM Demo
+                        url: http://osm-demo.wheregroup.com/service
+                        # url: http://172.16.2.124/map/service
+                        layers:
+                            30: { name: osm,    title : Germany OSM Demo WhereGroup,  visible: true }
+                        info_format: text/html
+                        visible: true
+                        format: image/png
+                        transparent: false
+                        tiled: true
+                        opacity: 100
+            elements:
+                sidepane:
+
+                    digitizer:
+                        class: Mapbender\DigitizerBundle\Element\Digitizer
+                        title: Digitalisierung
+                        target: map
+
+                        # Shows DB errors as notify message directly
+                        debug: true
+
+                        # Loads JS files from "web" path.
+                        # For tests only!
+                        jsSrc:
+                            - /components/vis-ui.js/src/js/utils/DataUtil.js
+                            - /components/vis-ui.js/src/js/utils/fn.formData.js
+                            - /components/vis-ui.js/src/js/elements/geo.toolset.js
+                            - /components/vis-ui.js/src/js/elements/date.selector.js
+                            - /components/vis-ui.js/src/js/elements/data.result-table.js
+                            - /components/vis-ui.js/src/js/elements/popup.dialog.js
+                            - /components/vis-ui.js/src/js/jquery.form.generator.js
+
+                        css: /stadt_theme.scss
+
+                        schemes:
+                            baumkataster:
+                                # Die Beschriftung (Wird in Auswahl-Box angezeigt)
+                                label: Bäume
+
+                                # Default: 1000
+                                maxResults: 5000
+
+                                # Features Digitalisieren auf der Karte (Verändern und Erstellen)
+                                # Default: true
+                                allowDigitize: true
+
+                                # Formular Daten Änderungen
+                                # Default: true
+                                allowEditData: true
+
+                                # Die Definition und die Reinfolge einzelne Werkzeuge für das Digitalisieren.
+                                # Deafult: alle vorhandene wernde angezeigt.
+                                toolset:
+                                  - type: drawPoint
+                                  # - type: modifyFeature
+                                  # - type: drawRectangle
+                                  # - type: drawEllipse
+                                  # - type: drawDonut
+                                  # - type: drawCircle
+                                  # - type: modifyFeature
+                                  - type: moveFeature
+
+                                    # TODO: implement conventional field set
+                                    select: |
+                                        $.notify("Nein, darfst du nicht!")
+                                  # - type: selectFeature
+                                  # - type: removeSelected
+
+                                # Allow to use context menu for the map
+                                # and side pane data table
+                                # TODO: remove if false from map
+                                useContextMenu: true
+
+                                # Den Layer dauerhaft anzeigen.
+                                # Oder nur wenn explicit über Select gewählt und nur wenn active ist
+                                # Default: false
+                                displayPermanent: false
+
+                                # Layer Features erst wenn das Element active ist und Schema selectiert ist zeigen.
+                                # Wenn auf "false" ist und Schema active ist, werden die Features, obwohl der Element selbst
+                                # nicht aktiv ist troztdem angezeigt.
+                                # Default: false
+                                displayOnInactive: false
+
+                                # Allow search directly in the digitizer element table. Optional. Default = false
+                                inlineSearch: true
+
+                                # Zoom scale denominator
+                                # Used for zoomToScale
+                                # Default: null
+                                zoomScaleDenominator: 100
+
+                                # Clustering
+                                # http://dev.openlayers.org/examples/strategy-cluster-extended.html
+                                # scales: [5000000,1000000,500000,100000,50000,25000,10000,7500,5000,2500,1000,500]
+                                clustering: &zoomClustering
+                                    - {scale: 10000, distance: 60}
+                                    - {scale: 2500, distance: 40}
+                                    - {scale: 1000, distance: 20}
+                                    - {scale: 500, distance: 1, disable: true}
+
+                                featureType:
+                                    connection: geometries
+                                    table: public.baeume_test_digi
+                                    filter: ausst_zustand = 1
+                                    uniqueId: ausst_id
+                                    geomType: point
+                                    geomField: the_geom
+                                    srid: 31466
+
+                                # Display edit popup after create
+                                openFormAfterEdit: true
+
+                                # Display remove button
+                                # Default: true
+                                allowDelete: false
+
+                                displayOnSelect: true
+
+                                # Search methods:
+                                # * currentExtent: search only by current extent geometry
+                                # * all: get all
+                                # Default: currentExtent
+                                searchType: currentExtent
+
+                                # Popup Definition
+                                popup:
+                                    title: Bäume
+                                    width: 500px
+                                    # resizible: true
+
+                                    # Edit dialog buttons
+                                    buttons:
+                                      - text: Test
+                                        # TODO: check
+                                        click: |
+                                          if(data.a_id > 0){
+                                              form.disableForm();
+                                              $.notify(data.a_id);
+                                          }
+
+                                        # Translation or text
+                                      - text: Print
+
+                                        # JavaScript called by click on the button
+                                        # There are special variables avaible:
+                                        # * wideget   - Digitizer widget
+                                        # * data      - Form current data
+                                        # * olFeature - OpenLayer feature and original data inside
+                                        click: |
+                                          console.log("PRINT");
+                                          console.log(widget);
+                                          console.log(form);
+                                          console.log(olFeature);
+                                          console.log(data);
+
+                                # Edit feature in the samge popup or great number of popup's
+                                # Default: true
+                                oneInstanceEdit: true
+
+                                # Feature list table
+                                tableFields:
+                                    ausst_id: {label: Nr., width: 50px}
+                                    info: {label: Baum}
+
+                                # Feature styles
+                                styles:
+                                    default:
+                                       strokeWidth: 2
+                                       strokeColor: "#0e6a9e"
+                                       fillColor:   "#1289CD"
+                                       fillOpacity: 1
+                                       fillWidth: 2
+                                       pointRadius: 10
+
+                                    # on mouse over
+                                    select:
+                                       strokeWidth: 3
+                                       strokeColor: "#0e6a9e"
+                                       fillOpacity: 0.7
+                                       strokeColor: "#0e6a9e"
+                                       pointRadius: 10
+
+                                # Feature form elements (in popup)
+                                formItems:
+                                   - type: tabs
+                                     children:
+                                       - type: form
+                                         title: Kontrolle
+                                         css: {padding: 10px}
+                                         children:
+                                             - type: select
+                                               title: Baumart
+                                               name: a_id
+                                               mandatory: true
+                                               infoText: 'Pflichtfeld'
+                                               connection: geometries
+                                               sql: "SELECT a_id, coalesce(a_lat_bez,'') || ' (' || coalesce(a_deu_bez,'') || ')' FROM verkehr.artikel order by a_lat_bez"
+
+                                             - type: textArea
+                                               title: Bemerkungen zum Baum
+                                               name: ausst_bem
+                                               rows: 4
+
+                                             - type: select
+                                               title: Lage
+                                               name: obj_id
+                                               mandatory: true
+                                               infoText: 'Pflichtfeld'
+                                               connection: geometries
+                                               sql: "SELECT obj_id, coalesce(objektbezeichnung,'') || ' (' || coalesce(objektartbezeichnung,'') || ')' as objekt from verkehr.objekte left join verkehr.objektart on objekte.objektartnr = objektart.objektart_id where objekt_zustand = 1 order by objektbezeichnung"
+
+                                             - type: input
+                                               title: Standort Bemerkung
+                                               name: bemerkungen_standort
+                                             - type: select
+                                               title: Zustand
+                                               name: ausst_zustand
+                                               mandatory: true
+                                               connection: geometries
+                                               sql: 'SELECT ausst_zustand_id, ausst_zustand_text FROM verkehr.ausstattung_zustand order by ausst_zustand_text'
+                                             - type: select
+                                               title: Kontrollintervall Stufe
+                                               name: kontrollintervall_stufe
+                                               connection: geometries
+                                               sql: "SELECT kontrollintervall_stufe,  kontrollintervall_stufe || ' - ' || dringlichkeit_zustand || ' - ' || kontrollintervall_text as beschreibung FROM verkehr.ausstattung_kontrollintervall order by kontrollintervall_stufe"
+                                               #options:
+                                               #    A: A - Problembäume mit umfangreichen Schäden - halbjährlich
+                                               #    B: B - Bäume, die zwar Schäden aufweisen, die jedoch weniger umfangreich sind - jährlich
+                                               #    C: C - Bäume (ab 15. Jahr nach Pflanzung) überwiegend ohne Schäden - 2 Jahre
+                                               #    D: D - Jungbäume (bis 15. Jahr nach Pflanzung - Pflegekontrolle
+                                               #    E: E - Bäume, die aufgrund besonderer Umstände, zu einem bestimmten Zeitpunkt kontrolliert werden müssen - anlassbezogen
+                                               infoText: |
+                                                   A - Problembäume mit umfangreichen Schäden - halbjährlich
+                                                   B - Bäume, die zwar Schäden aufweisen, die jedoch weniger umfangreich sind - jährlich
+                                                   C - Bäume (ab 15. Jahr nach Pflanzung) überwiegend ohne Schäden - 2 Jahre
+                                                   D - Jungbäume (bis 15. Jahr nach Pflanzung - Pflegekontrolle
+                                                   E - Bäume, die aufgrund besonderer Umstände, zu einem bestimmten Zeitpunkt kontrolliert werden müssen - anlassbezogen'
+                                             - type: breakLine
+
+                                             - type: date
+                                               title: Datum letzte Kontrolle
+                                               infoText: Bitte geben Sie das Datum der letzten Kontrolle an.
+                                               mandatory: true
+                                               mandatoryText: 'Pflichtfeld: Bitte das Datum der letzten Kontrolle angeben.'
+                                               infoText: 'Feld zeigt die letzte Kontrolle an.'
+                                               name: letzte_kontrolle_datum
+                                               css: {width: 100%}
+
+                                             - type: input
+                                               title: Bestandsaufnahme Bemerkung
+                                               name: letzte_kontrolle_bestandsaufnahme_bemerkung
+                                             - type: breakLine
+                                             - type: fieldSet
+                                               children:
+                                                 - type: select
+                                                   title: Pflanzjahr
+                                                   name: ausst_jahr
+                                                   connection: geometries
+                                                   sql: SELECT jahr, jahr FROM generate_series(1900,EXTRACT(YEAR FROM now())::int) as jahr order by jahr desc
+                                                 - type: select
+                                                   title: Untergrund
+                                                   name: ug_id
+                                                   connection: geometries
+                                                   sql: "SELECT ug_id, ug_bez FROM verkehr.untergrund order by ug_id"
+                                                 - {type: input, title: Pflanzgröße (STU), name: ausst_merkmal_1}
+
+                                       - type: form
+                                         title: Pflege
+                                         css: {padding: 10px}
+                                         children:
+                                             # noch pruefen
+                                             - type: select
+                                               title: Vitalität
+                                               name: schadensmerkmal_id
+                                               options:  ['1 xx']
+                                               #klaeren         - type: select
+                                               #   multiple: true
+                                               #   title: Pflegemaßnahme
+                                               #   name: pflegemassnahme
+                                               #   connection: geometries
+                                               #   sql: "SELECT pflegemassnahme_id, pflegemassnahme_beschreibung FROM verkehr.ausstattung_pflegemassnahme order by pflegemassnahme_beschreibung"
+                                             - type: checkbox
+                                               title: Totholz
+                                               name: totholz
+                                               value: Totholz
+                                               checked: false
+
+                                             - type: checkbox
+                                               title: Lichtraumprofil
+                                               name: lichtraumprofil
+                                               value: Lichtraumprofil
+                                               checked: false
+
+                                             - type: checkbox
+                                               title: Pilzbefall
+                                               name: pilzbefall
+                                               value: Pilzbefall
+                                               checked: false
+
+                                             - type: checkbox
+                                               title: Insektenbefall
+                                               name: insektenbefall
+                                               value: Insektenbefall
+                                               checked: false
+                                             - type: checkbox
+                                               title: Beschädigung am Stamm
+                                               name: beschaedigung_stamm
+                                               value: Beschädigung am Stamm
+                                               checked: false
+                                             - type: checkbox
+                                               title: Beschädigung an der Wurzel
+                                               name: beschaedigung_wurzel
+                                               value: Beschädigung an der Wurzel
+                                               checked: false
+                                             - type: select
+                                               title: Resultat
+                                               name: letzte_kontrolle_resultat
+                                               options:  ['1 entfernen/fällen']
+                                             - type: input
+                                               title: Resultat Bemerkung
+                                               name: letzte_kontrolle_resultat_bemerkung
+                                             - type: input
+                                               title: Bewirtschaftung
+                                               name: bewirtschaftung
+                                             - type: select
+                                               title: Maßnahme Dringlichkeit
+                                               name: dringlichkeit_massnahme
+                                               connection: geometries
+                                               sql: 'SELECT dringlichkeit_id, dringlichkeit_beschreibung FROM verkehr.ausstattung_dringlichkeit_massnahme order by dringlichkeit_id'
+                                               #options:  ['1 Erledigung innerhalb von 14 Tagen']
+                                               infoText: |
+                                                   1 - Erledigung innerhalb von 14 Tagen
+                                                   2 - Erledigung im Rahmen des normalen Prozedere
+                                                   3 - Erledigung ohne Zeitvorgabe'
+                                       - type: form
+                                         title: Stammdaten
+                                         css: {padding: 10px}
+                                         children:
+                                             - type: select
+                                               title: Beetsicherung
+                                               name: beetsicherung_id
+                                               connection: geometries
+                                               sql: 'SELECT id, beetsicherung FROM verkehr.beetsicherung order by beetsicherung'
+                                             - type: select
+                                               title: Bilanzkonto
+                                               name: bilanzkonto_id
+                                               connection: geometries
+                                               sql: "SELECT id, produkt || '(' || bilanzkonto || ')' as beschreibung FROM verkehr.bilanzkonto order by bilanzkonto"
+                                             - type: breakLine
+                                             - type: fieldSet
+                                               children:
+                                                 - type: input
+                                                   title: Preis
+                                                   name: ausst_preis
+                                                 - type: input
+                                                   title: Baumscheibe Größe
+                                                   name: ausst_merkmal_2
+                                             - type: breakLine
+                                             - type: input
+                                               title: Bild
+                                               name: bild
+                                       - type: form
+                                         title: Krone
+                                         css: {padding: 10px}
+                                         children:
+                                             - type: checkbox
+                                               title: Lichtraumprofil
+                                               name: krone_lichtraumprofil
+                                               value: Lichtraumprofil
+                                               checked: false
+                                             - type: checkbox
+                                               title: Totaeste
+                                               name: krone_totaeste
+                                               value: Totaeste
+                                               checked: false
+                                             - type: checkbox
+                                               title: Spechthoehlen
+                                               name: krone_spechthoehlen
+                                               value: Spechthoehlen
+                                               checked: false
+                                             - type: checkbox
+                                               title: Ungluecksbalken
+                                               name: krone_ungluecksbalken
+                                               value: Ungluecksbalken
+                                               checked: false
+                                             - type: checkbox
+                                               title: Vergabelungen
+                                               name: krone_vergabelungen
+                                               value: Vergabelungen
+                                               checked: false
+                                             - type: checkbox
+                                               title: Kronensicherungen
+                                               name: krone_kronensicherungen
+                                               value: Kronensicherungen
+                                               checked: false
+                                             - type: checkbox
+                                               title: Wunden
+                                               name: krone_wunden
+                                               value: Wunden
+                                               checked: false
+                                             - type: checkbox
+                                               title: Pilzfruchtkoerper
+                                               name: krone_pilzfruchtkoerper
+                                               value: Pilzfruchtkoerper
+                                               checked: false
+                                       - type: form
+                                         title: Stamm
+                                         css: {padding: 10px}
+                                         children:
+                                             - type: checkbox
+                                               title: Schrägstand
+                                               name: stamm_schraegstand
+                                               value: Schrägstand
+                                               checked: false
+                                             - type: checkbox
+                                               title: Anfahrschäden
+                                               name: stamm_anfahrschaeden
+                                               value: Anfahrschäden
+                                               checked: false
+                                             - type: checkbox
+                                               title: Astungswunden
+                                               name: stamm_astungswunden
+                                               value: Astungswunden
+                                               checked: false
+                                             - type: checkbox
+                                               title: Höhlungen
+                                               name: stamm_hoehlungen
+                                               value: Höhlungen
+                                               checked: false
+                                             - type: checkbox
+                                               title: Plomben
+                                               name: stamm_plomben
+                                               value: Plomben
+                                               checked: false
+                                             - type: checkbox
+                                               title: Rindenbild
+                                               name: stamm_rindenbild
+                                               value: Rindenbild
+                                               checked: false
+                                             - type: checkbox
+                                               title: Stammausformung
+                                               name: stamm_stammausformung
+                                               value: Stammausformung
+                                               checked: false
+                                             - type: checkbox
+                                               title: Pilzfruchtkörper
+                                               name: stamm_pilzfruchtkoerper
+                                               value: Pilzfruchtkörper
+                                               checked: false
+                                       - type: form
+                                         title: Strammfuß
+                                         css: {padding: 10px}
+                                         children:
+                                             - type: checkbox
+                                               title: Stammaustriebe
+                                               name: stammfuss_stammaustriebe
+                                               value: Stammaustriebe
+                                               checked: false
+                                             - type: checkbox
+                                               title: Wundungen
+                                               name: stammfuss_wundungen
+                                               value: Wundungen
+                                               checked: false
+                                             - type: checkbox
+                                               title: Hoehlungen
+                                               name: stammfuss_hoehlungen
+                                               value: Hoehlungen
+                                               checked: false
+                                             - type: checkbox
+                                               title: Insekten
+                                               name: stammfuss_insekten
+                                               value: Insekten
+                                               checked: false
+                                             - type: checkbox
+                                               title: Stammfussausformung
+                                               name: stammfuss_stammfussausformung
+                                               value: Stammfussausformung
+                                               checked: false
+                                             - type: checkbox
+                                               title: Adventivwurzeln
+                                               name: stammfuss_adventivwurzeln
+                                               value: Adventivwurzeln
+
+                                             - type: checkbox
+                                               title: Bodenaufwoelbungen
+                                               name: stammfuss_bodenaufwoelbungen
+                                               value: Bodenaufwoelbungen
+                                               checked: false
+                                             - type: checkbox
+                                               title: Bodenrisse
+                                               name: stammfuss_bodenrisse
+                                               value: Bodenrisse
+                                               checked: false
+                            ausstattung_pflege:
+                                label: Pflegemaßnahme Bäume
+                                maxResults: 5000
+                                clustering: *zoomClustering
+                                inlineSearch: true
+                                featureType:
+                                    connection: geometries
+                                    table: verkehr.ausstattung_pflege
+                                    uniqueId: gid
+                                    geomType: point
+                                    geomField: the_geom
+                                    srid: 31466
+                                    filter: erledigt_am is NULL
+                                openFormAfterEdit: true
+                                allowEditData: true
+                                allowDelete: false
+                                allowDigitize: false
+                                displayPermanent: false
+                                displayOnSelect: true
+                                searchType: all # currentExtent|all - default is currentExtent
+                                toolset:
+                                    - type: selectFeature
+                                popup:
+                                    title: Pflegemaßnahme Bäume
+                                    width: 500px
+                                tableFields:
+                                    info: {label: Info, width: 30%}
+                                    massnahmen: {label: Maßnahmen, width: 40%}
+                                    erstellt_am: {label: Am, width: 95px}
+                                formItems:
+                                   - type: form
+                                     title: Pflege
+                                     css: {padding: 10px}
+                                     children:
+                                         - type: text
+                                           text: data.info + ' : ' + data.massnahmen + ' (erstellt am: ' + data.erstellt_am + ')'
+                                         - type: label
+                                           text: 'Bitte quittieren Sie die Pflegemaßnahme.'
+                                           #- type: breakLine
+                                         - type: date
+                                           title: erledigt am
+                                           infoText: Bitte geben Sie das Datum der Maßnahme an.
+                                           mandatory: true
+                                           mandatoryText: 'Pflichtfeld: Bitte das Datum der Maßnahme an.'
+                                           name: erledigt_am
+                                           css: {width: 100%}
+                                         - type: select
+                                           title: erledigt durch
+                                           infoText: 'Pflichtfeld: Bitte geben Sie Ihren Namen an.'
+                                           mandatory: true
+                                           mandatoryText: 'Pflichtfeld: Bitte geben Sie Ihren Namen an.'
+                                           name: erledigt_durch
+                                           options: {Niko Strutz, Andere:Andere}
+
+
+
+
+
+
+
+                    HTML:
+                        title: Test-Tab
+                        class: Mapbender\CoreBundle\Element\HTMLElement
+                        content: ...
+                content:
+                    map:
+                        title: Main Map
+                        class: Mapbender\CoreBundle\Element\Map
+                        layersets: [main]  #[main]
+                        srs: EPSG:25832
+                        units: m
+                        extents:
+                            start: [357267.38034512,5629757.0792806,357950.58386334,5630453.5828674]
+                            max: [-500000,4350000,1600000,6850000]
+                        scales: [5000000,1000000,500000,100000,50000,25000,10000,7500,5000,2500,1000,500]
+                        maxResolution: auto
+                        otherSrs: ["EPSG:25833","EPSG:31466","EPSG:31467","EPSG:900913","EPSG:4326"]
